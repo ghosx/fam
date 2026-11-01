@@ -1,0 +1,29 @@
+# 依赖
+node_modules/
+.npm-cache/
+
+# 构建产物
+build/
+dist/
+app/src/vendor/
+
+# 生成的图标预览（icon.ico / icon.png 提交，其余尺寸预览忽略）
+build-resources/icon-*.png
+
+# 本地数据与备份
+*.db
+*.db-wal
+*.db-shm
+*.bak
+*.tmp
+fam.db*
+
+# 可执行文件
+*.exe
+
+# 编辑器与工具
+.codebuddy/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

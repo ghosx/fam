@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '发布标签（如 v1.0.0）'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & publish Windows installer
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Backend tests
+        working-directory: server
+        run: |
+          go vet ./...
+          go test ./... -count=1
+
+      - name: Frontend tests
+        run: node --test tests/frontend/validate.test.js
+
+      - name: Build NSIS installer
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: npm run dist
+
+      - name: Show artifacts
+        run: Get-ChildItem dist -File | Select-Object Name, Length
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          name: fam ${{ github.event.inputs.tag || github.ref_name }}
+          files: |
+            dist/fam-Setup-*.exe
+          generate_release_notes: true
+          fail_on_unmatched_files: true

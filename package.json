@@ -1,0 +1,27 @@
+{
+  "name": "fam",
+  "version": "1.0.0",
+  "description": "家庭财产管理 · 本机 Electron + Go 应用",
+  "author": "fam",
+  "main": "app/main.js",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.js",
+    "build:server": "node scripts/build.js server",
+    "start": "node scripts/start.js",
+    "start:rebuild": "node scripts/start.js --rebuild",
+    "start:smoke": "node scripts/start.js --smoke",
+    "test": "node scripts/test.js",
+    "test:server": "node scripts/test.js server",
+    "test:frontend": "node scripts/test.js frontend",
+    "smoke": "node scripts/smoke.js",
+    "icon": "node scripts/make-icon.js",
+    "dist": "node scripts/build.js && node scripts/make-icon.js && electron-builder --win nsis",
+    "dist:dir": "node scripts/build.js && node scripts/make-icon.js && electron-builder --win --dir"
+  },
+  "devDependencies": {
+    "chart.js": "^4.4.6",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  }
+}

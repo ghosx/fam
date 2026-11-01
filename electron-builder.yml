@@ -1,0 +1,42 @@
+appId: com.fam.assets
+productName: fam
+copyright: fam 家庭财产管理
+
+directories:
+  output: dist
+  buildResources: build-resources
+
+# 只把主进程与预加载脚本打进 asar；前端页面由 Go 后端作为静态资源提供
+files:
+  - app/main.js
+  - app/preload.js
+  - package.json
+
+# 后端二进制与前端页面放在 resources/ 下，Go 进程可直接读取
+extraResources:
+  - from: app/src
+    to: web
+  - from: build/fam-server.exe
+    to: fam-server.exe
+  - from: build-resources/icon.ico
+    to: icon.ico
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build-resources/icon.ico
+  artifactName: fam-Setup-${version}.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: fam 家庭财产管理
+  uninstallDisplayName: fam 家庭财产管理
+  deleteAppDataOnUninstall: false
+  differentialPackage: false

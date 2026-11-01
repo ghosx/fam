@@ -1,0 +1,21 @@
+# 文本文件统一 LF，避免跨平台 diff 噪音
+* text=auto eol=lf
+
+*.go   text eol=lf
+*.js   text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.yml  text eol=lf
+*.css  text eol=lf
+*.html text eol=lf
+
+# 批处理必须保持 CRLF
+*.cmd  text eol=crlf
+*.bat  text eol=crlf
+*.ps1  text eol=crlf
+
+# 二进制
+*.ico  binary
+*.png  binary
+*.exe  binary
+*.db   binary

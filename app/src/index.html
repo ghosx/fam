@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:*" />
+  <title>fam · 家庭财产管理</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">fam <span>家庭财产管理</span></div>
+    <nav class="tabs">
+      <button class="tab active" data-tab="accounts">账户</button>
+      <button class="tab" data-tab="entries">录入</button>
+      <button class="tab" data-tab="analysis">分析</button>
+      <button class="tab" data-tab="data">数据</button>
+    </nav>
+    <div class="status" id="status">正在连接…</div>
+    <button id="lock-now" class="link" title="锁定并返回解锁界面">锁定</button>
+  </header>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- 锁屏：首次设置密码 / 后续解锁 -->
+  <div class="lock-screen" id="lock-screen">
+    <div class="lock-card">
+      <div class="lock-brand">fam</div>
+      <p class="lock-subtitle" id="lock-subtitle">正在连接本机服务…</p>
+
+      <form id="lock-setup" class="lock-form hidden">
+        <label>设置密码<input id="setup-password" type="password" autocomplete="new-password" placeholder="至少 6 个字符" /></label>
+        <label>确认密码<input id="setup-password2" type="password" autocomplete="new-password" placeholder="再次输入" /></label>
+        <p class="form-error hidden" id="setup-error"></p>
+        <button type="submit" class="primary" id="setup-submit">设置密码并进入</button>
+      </form>
+
+      <form id="lock-unlock" class="lock-form hidden">
+        <label>访问密码<input id="unlock-password" type="password" autocomplete="current-password" placeholder="请输入密码" /></label>
+        <p class="form-error hidden" id="unlock-error"></p>
+        <button type="submit" class="primary" id="unlock-submit">解锁</button>
+      </form>
+
+      <p class="lock-tip">数据以 AES-256-GCM 加密保存在本机，密码用于派生解密密钥且不会被保存。忘记密码将无法恢复数据。</p>
+    </div>
+  </div>
+
+  <!-- 账户 -->
+  <section class="view active" id="view-accounts">
+    <div class="toolbar">
+      <input id="acct-keyword" type="search" placeholder="搜索名称或备注" />
+      <label><input id="acct-show-archived" type="checkbox" /> 显示已归档</label>
+      <span class="spacer"></span>
+      <button class="primary" id="acct-new">+ 新增账户</button>
+    </div>
+    <table class="grid">
+      <thead>
+        <tr><th>名称</th><th>类别</th><th>币种</th><th>备注</th><th class="num">最新余额</th><th>最新日期</th><th>状态</th><th class="ops">操作</th></tr>
+      </thead>
+      <tbody id="acct-body"></tbody>
+    </table>
+    <p class="empty hidden" id="acct-empty">暂无账户，点击右上角「新增账户」开始。</p>
+  </section>
+
+  <!-- 录入 -->
+  <section class="view" id="view-entries">
+    <div class="panel">
+      <div class="toolbar">
+        <label>日期 <input id="entry-date" type="date" /></label>
+        <span class="spacer"></span>
+        <button class="primary" id="entry-save">保存录入</button>
+      </div>
+      <p class="hint">填写需要更新的账户金额，留空的账户不会被修改；同一账户同一天重复录入将覆盖原记录。</p>
+      <table class="grid">
+        <thead><tr><th>账户</th><th>类别</th><th class="num">金额</th><th>备注</th></tr></thead>
+        <tbody id="quick-body"></tbody>
+      </table>
+      <p class="empty hidden" id="quick-empty">暂无有效账户，请先到「账户」页新增。</p>
+    </div>
+
+    <div class="panel">
+      <div class="toolbar">
+        <strong>历史录入</strong>
+        <label>账户 <select id="hist-account"><option value="">全部</option></select></label>
+        <label>从 <input id="hist-from" type="date" /></label>
+        <label>到 <input id="hist-to" type="date" /></label>
+        <button id="hist-search">查询</button>
+        <span class="spacer"></span>
+        <span class="hint" id="hist-total"></span>
+      </div>
+      <table class="grid">
+        <thead><tr><th>日期</th><th>账户</th><th class="num">金额</th><th>备注</th><th class="ops">操作</th></tr></thead>
+        <tbody id="hist-body"></tbody>
+      </table>
+      <p class="empty hidden" id="hist-empty">该条件下没有录入记录。</p>
+    </div>
+  </section>
+
+  <!-- 分析 -->
+  <section class="view" id="view-analysis">
+    <div class="toolbar">
+      <label>币种 <select id="ana-currency"></select></label>
+      <label>汇总日期 <input id="ana-date" type="date" /></label>
+      <span class="spacer"></span>
+      <button id="ana-refresh">刷新</button>
+    </div>
+
+    <div class="cards">
+      <div class="card"><div class="card-title">总资产</div><div class="card-value" id="ana-total">—</div><div class="card-sub" id="ana-date-label"></div></div>
+      <div class="card"><div class="card-title">账户数</div><div class="card-value" id="ana-count">—</div><div class="card-sub">有效账户</div></div>
+      <div class="card"><div class="card-title">最大类别</div><div class="card-value" id="ana-top">—</div><div class="card-sub" id="ana-top-sub"></div></div>
+    </div>
+
+    <div class="charts">
+      <div class="chart-box"><h3>类别分布</h3><div class="chart-holder"><canvas id="chart-category"></canvas></div></div>
+      <div class="chart-box"><h3>账户分布</h3><div class="chart-holder"><canvas id="chart-account"></canvas></div></div>
+    </div>
+
+    <div class="panel">
+      <div class="toolbar">
+        <strong>走势与区间对比</strong>
+        <label>从 <input id="ana-from" type="date" /></label>
+        <label>到 <input id="ana-to" type="date" /></label>
+        <button data-range="1m">近1月</button>
+        <button data-range="3m">近3月</button>
+        <button data-range="1y">近1年</button>
+        <button data-range="all">全部</button>
+        <span class="spacer"></span>
+        <button class="primary" id="ana-series">查看走势</button>
+      </div>
+      <div class="cards">
+        <div class="card"><div class="card-title">期初</div><div class="card-value" id="cmp-start">—</div><div class="card-sub" id="cmp-start-date"></div></div>
+        <div class="card"><div class="card-title">期末</div><div class="card-value" id="cmp-end">—</div><div class="card-sub" id="cmp-end-date"></div></div>
+        <div class="card"><div class="card-title">变化</div><div class="card-value" id="cmp-change">—</div><div class="card-sub" id="cmp-ratio"></div></div>
+      </div>
+      <div class="chart-box tall"><div class="chart-holder"><canvas id="chart-line"></canvas></div></div>
+    </div>
+  </section>
+
+  <!-- 数据 -->
+  <section class="view" id="view-data">
+    <div class="panel">
+      <h3>导出（CSV）</h3>
+      <div class="toolbar">
+        <label>从 <input id="exp-from" type="date" /></label>
+        <label>到 <input id="exp-to" type="date" /></label>
+        <button id="exp-entries">导出录入明细</button>
+        <button id="exp-summary">导出汇总</button>
+        <button id="exp-series">导出走势</button>
+      </div>
+      <p class="hint">CSV 为 UTF-8 带 BOM，可直接用 Excel 打开。</p>
+    </div>
+
+    <div class="panel">
+      <h3>数据库备份与恢复</h3>
+      <div class="toolbar">
+        <label>备份目录 <input id="bak-dir" type="text" placeholder="留空则备份到数据目录" /></label>
+        <button class="primary" id="bak-run">立即备份</button>
+      </div>
+      <div class="toolbar">
+        <label>恢复文件 <input id="bak-file" type="file" accept=".db" /></label>
+        <button id="bak-restore">从文件恢复</button>
+      </div>
+      <p class="hint" id="bak-result"></p>
+    </div>
+
+    <div class="panel">
+      <h3>访问密码</h3>
+      <form id="pw-form" class="inline-form">
+        <label>原密码 <input id="pw-old" type="password" autocomplete="current-password" /></label>
+        <label>新密码 <input id="pw-new" type="password" autocomplete="new-password" placeholder="至少 6 个字符" /></label>
+        <label>确认新密码 <input id="pw-new2" type="password" autocomplete="new-password" /></label>
+        <button type="submit">修改密码</button>
+      </form>
+      <p class="hint" id="pw-result">修改密码后，其他已解锁的窗口需要重新解锁。</p>
+    </div>
+
+    <div class="panel">
+      <h3>JSON 快照</h3>
+      <div class="toolbar">
+        <button id="snap-export">导出快照</button>
+        <label>快照文件 <input id="snap-file" type="file" accept=".json" /></label>
+        <label>模式
+          <select id="snap-mode"><option value="replace">replace（覆盖）</option><option value="merge">merge（合并）</option></select>
+        </label>
+        <button id="snap-import">导入快照</button>
+      </div>
+      <p class="hint" id="snap-result"></p>
+    </div>
+  </section>
+
+  <!-- 账户编辑弹窗 -->
+  <div class="modal hidden" id="acct-modal">
+    <div class="modal-box">
+      <h3 id="acct-modal-title">新增账户</h3>
+      <form id="acct-form">
+        <label>名称<input name="name" type="text" maxlength="50" placeholder="如：招商银行储蓄卡" /></label>
+        <label>类别<select name="category"></select></label>
+        <label>币种<select name="currency"></select></label>
+        <label>备注<input name="note" type="text" maxlength="200" placeholder="选填" /></label>
+        <p class="form-error hidden" id="acct-error"></p>
+        <div class="modal-ops">
+          <button type="button" id="acct-cancel">取消</button>
+          <button type="submit" class="primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="vendor/chart.umd.js"></script>
+  <script src="validate.js"></script>
+  <script src="api.js"></script>
+  <script src="lock.js"></script>
+  <script src="charts.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
