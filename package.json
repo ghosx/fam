@@ -16,8 +16,8 @@
     "test:frontend": "node scripts/test.js frontend",
     "smoke": "node scripts/smoke.js",
     "icon": "node scripts/make-icon.js",
-    "dist": "node scripts/build.js && node scripts/make-icon.js && electron-builder --win nsis",
-    "dist:dir": "node scripts/build.js && node scripts/make-icon.js && electron-builder --win --dir"
+    "dist": "node scripts/build.js && node scripts/make-icon.js && electron-builder --win nsis --publish never",
+    "dist:dir": "node scripts/build.js && node scripts/make-icon.js && electron-builder --win --dir --publish never"
   },
   "devDependencies": {
     "chart.js": "^4.4.6",
